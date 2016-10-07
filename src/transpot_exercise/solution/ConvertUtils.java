@@ -5,9 +5,6 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
-/**
- * Created by AlexL on 04.10.2016.
- */
 public class ConvertUtils {
     public static int[][] doubleListToPrimitiveArray(List<List<Integer>> list) {
         int[][] array = new int[list.size()][];

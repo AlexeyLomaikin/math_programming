@@ -4,9 +4,6 @@ import javax.swing.*;
 import javax.swing.border.Border;
 import java.awt.*;
 
-/**
- * Created by AlexL on 25.09.2016.
- */
 public class TextCel extends JTextField {
     private Border initialBorder = BorderFactory.createLineBorder(Color.BLACK);
 
