@@ -13,9 +13,6 @@ import java.awt.event.KeyListener;
 import java.util.*;
 import java.util.List;
 
-/**
- * Created by AlexL on 01.10.2016.
- */
 public class SolutionFrame extends JFrame {
     private JFrame prevFrame;
     private int[][] cost;
