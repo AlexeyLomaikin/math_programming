@@ -72,7 +72,7 @@ public class Solution {
        where m - offers size, n - needs size, Ai, Bi - potencials
        @return OperationResult<Map<String, int[]>> wich contains logs and A, B potencials
      **/
-    private static OperationResult<Map<String, int[]>> getPotencials(int[][] curPlan, int[][] cost,
+    public static OperationResult<Map<String, int[]>> getPotencials(int[][] curPlan, int[][] cost,
                                                                      Point[] eXCoordinates) {
         Map<String, int[]> res = new HashMap<>();
         List<Integer> aPotencial = new ArrayList<>();
@@ -98,7 +98,6 @@ public class Solution {
             }
         }
 
-        //we need use Gaussian elimination to solve system
         int offersSize = cost.length;
         int needsSize = cost[0].length;
 
@@ -106,12 +105,21 @@ public class Solution {
             throw new IllegalArgumentException("m + n - 1 != basicCellSize: incorrect eXCoordinates List");
         }
 
+        /* we need use Gaussian elimination to solve system
+        */
         int[][] coefMaxtix = new int[offersSize + needsSize - 1][offersSize + needsSize];
 
+        int matrixRow = 0;
         for (Point coordinate: costForPotencials.keySet()) {
             int i = coordinate.getX();
             int j = coordinate.getY();
+            if (i != 0) {
+                coefMaxtix[matrixRow][i] = 1;                          //Ai, A1 == 0
+            }
+            coefMaxtix[matrixRow][offersSize + j] = 1;             //Bj
+            matrixRow++;
         }
+
 
         res.put(A_POTENCIAL, ConvertUtils.singleListToPrimitiveArray(aPotencial));
         res.put(B_POTENCIAL, ConvertUtils.singleListToPrimitiveArray(bPotencial));
