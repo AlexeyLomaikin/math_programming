@@ -1,12 +1,10 @@
 package transpot_exercise.solution;
 
-import com.sun.org.apache.xpath.internal.operations.Bool;
-
 import java.util.*;
 
 /**
  * This class contains methods which do some calculations and
- * return OperationResult object with Object result of operation and String which explain all actions
+ * return OperationResult object with Object result of operation and List of String which explain all actions
  */
 public class Solution {
     private static final String A_POTENCIAL = "a";
@@ -67,7 +65,13 @@ public class Solution {
         }
     }
 
-    //eXCoordinates - coordinates of zero shipping in array which must be replaced with E
+    /**
+     * @param eXCoordinates - coordinates of zero shipping in array which must be replaced with E: E > 0 && E -> 0
+     * We need to solve the sytem of equlation: Ai + Bj = c[i, j] for X[i, j] > 0; A1 = 0
+     * A1...Am, B1...Bn, i = 1...m, j = 1..m
+       where m - offers size, n - needs size, Ai, Bi - potencials
+       @return OperationResult<Map<String, int[]>> wich contains logs and A, B potencials
+     **/
     private static OperationResult<Map<String, int[]>> getPotencials(int[][] curPlan, int[][] cost,
                                                                      Point[] eXCoordinates) {
         Map<String, int[]> res = new HashMap<>();
@@ -83,7 +87,31 @@ public class Solution {
 
         boolean isPlanDegenerate = eCoordinates != null;
 
+        //init cost map: C[i,j] for X[i, j] > 0
+        //Point - price coordinates in cost array
+        Map<Point, Integer> costForPotencials = new HashMap<>();
+        for (int i = 0; i < cost.length; i++) {
+            for (int j = 0; j < cost[i].length; j++) {
+                if (curPlan[i][j] != 0 || (isPlanDegenerate && eCoordinates.contains(new Point(i, j)))) {
+                    costForPotencials.put(new Point(i, j), cost[i][j]);
+                }
+            }
+        }
 
+        //we need use Gaussian elimination to solve system
+        int offersSize = cost.length;
+        int needsSize = cost[0].length;
+
+        if ((offersSize + needsSize - 1) != costForPotencials.size()) {
+            throw new IllegalArgumentException("m + n - 1 != basicCellSize: incorrect eXCoordinates List");
+        }
+
+        int[][] coefMaxtix = new int[offersSize + needsSize - 1][offersSize + needsSize];
+
+        for (Point coordinate: costForPotencials.keySet()) {
+            int i = coordinate.getX();
+            int j = coordinate.getY();
+        }
 
         res.put(A_POTENCIAL, ConvertUtils.singleListToPrimitiveArray(aPotencial));
         res.put(B_POTENCIAL, ConvertUtils.singleListToPrimitiveArray(bPotencial));
@@ -330,7 +358,7 @@ public class Solution {
         return new OperationResult<>(sum, infoList);
     }
 
-    private static int calcL(int[][] cost, int[][] xPlan) {
+    public static int calcL(int[][] cost, int[][] xPlan) {
         int L = 0;
         for (int i = 0; i < xPlan.length; i++) {
             for (int j = 0; j < xPlan[i].length; j++) {
