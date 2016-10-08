@@ -198,6 +198,7 @@ public class SolutionFrame extends JFrame {
                         break;
                     case NORTH_WEST_METHOD:
                         result = Solution.NorthWestMethod(consumersNeeds, providerOffers, cost);
+                        Solution.getPotencials(result.getResult(), cost, null);
                         break;
                 }
                 clearResultInfo();

@@ -43,6 +43,7 @@ public class HelloFrame extends JFrame{
         int consumerSize = Integer.parseInt(fields.get(CONSUMER_FIELD).getText());
         FillFrame fillFrame = new FillFrame(this, providersSize, consumerSize);
         fillFrame.setVisible(true);
+        this.setVisible(false);
     }
 
     private Component getButtonsPanel() {
