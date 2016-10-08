@@ -69,12 +69,11 @@ public class Solution {
      * @param eXCoordinates - coordinates of zero shipping in array which must be replaced with E: E > 0 && E -> 0
      * We need to solve the sytem of equlation: Ai + Bj = c[i, j] for X[i, j] > 0; A1 = 0
      * A1...Am, B1...Bn, i = 1...m, j = 1..m
-      where m - offers size, n - needs size, Ai, Bi - potencials
+    where m - offers size, n - needs size, Ai, Bi - potencials
      @return OperationResult wich contains logs and A, B potencials
      **/
     public static OperationResult<Map<String, int[]>> getPotencials(int[][] curPlan, int[][] cost,
                                                                     Point[] eXCoordinates) {
-        Map<String, int[]> res = new HashMap<>();
         ArrayList<String> infoList = new ArrayList<>();
 
         Set<Point> eCoordinates = null;
@@ -85,9 +84,12 @@ public class Solution {
 
         boolean isPlanDegenerate = eCoordinates != null;
 
+        int offersSize = cost.length;
+        int needsSize = cost[0].length;
+
         //init equalations: Ai + Bj = C[i,j] for X[i, j] > 0
         Map<Point, Integer> equalations = new HashMap<>();
-        for (int i = 0; i < cost.length; i++) {
+        for (int i = 0; i < offersSize; i++) {
             for (int j = 0; j < cost[i].length; j++) {
                 if (curPlan[i][j] != 0 || (isPlanDegenerate && eCoordinates.contains(new Point(i, j)))) {
                     equalations.put(new Point(i, j), cost[i][j]);
@@ -95,16 +97,14 @@ public class Solution {
             }
         }
 
-        int offersSize = cost.length;
-        int needsSize = cost[0].length;
+        int potencialCount = offersSize + needsSize;
 
-        if ((offersSize + needsSize - 1) != equalations.size()) {
+        if ((potencialCount - 1) != equalations.size()) {
             throw new IllegalArgumentException("m + n - 1 != basicCellSize: incorrect eXCoordinates List");
         }
 
         int[] aPotencial = new int[offersSize];
         int[] bPotencial = new int[needsSize];
-        int potencialCount = offersSize + needsSize;
 
         //put x Idx as x and y Idx as y + offersSize
         Set<Integer> solvedIdxs = new HashSet<>();
@@ -141,6 +141,7 @@ public class Solution {
             }
         }
 
+        Map<String, int[]> res = new HashMap<>();
         res.put(A_POTENCIAL, aPotencial);
         res.put(B_POTENCIAL, bPotencial);
         return new OperationResult<>(res, infoList);
@@ -215,10 +216,13 @@ public class Solution {
 
         //sort all prices ascending
         Set<Integer> sortedCost = new TreeSet<>();
+        List<Point> zeroCostIdxs = new ArrayList<>();
         for (int i = 0; i < cost.length; i++) {
-            for (int price : cost[i]) {
-                if (price != 0) {
-                    sortedCost.add(price);
+            for (int j = 0; j < cost[i].length; j++) {
+                if (cost[i][j] != 0) {
+                    sortedCost.add(cost[i][j]);
+                }else {
+                    zeroCostIdxs.add(new Point(i, j));
                 }
             }
         }
@@ -226,19 +230,17 @@ public class Solution {
         //execute algorithm from min price to max price
         //also we check all equal prices
         for (Integer price: sortedCost) {
-            List<Integer> foundIdxI = new ArrayList<>();
-            List<Integer> foundIdxJ = new ArrayList<>();
+            List<Point> foundIdxs = new ArrayList<>();
             for (int i = 0; i < cost.length; i++) {
                 for (int j = 0; j < cost[i].length; j++) {
                     if (price == cost[i][j]) {
-                        foundIdxI.add(i);
-                        foundIdxJ.add(j);
+                        foundIdxs.add(new Point(i, j));
                     }
                 }
             }
-            for (int k = 0; k < foundIdxI.size(); k++) {
-                int iIdx = foundIdxI.get(k);
-                int jIdx = foundIdxJ.get(k);
+            for (Point p: foundIdxs) {
+                int iIdx = p.getX();
+                int jIdx = p.getY();
                 if (offers[iIdx] == 0 || needs[jIdx] == 0) continue;
                 xPlan[iIdx][jIdx] = Math.min(offers[iIdx], needs[jIdx]);
                 offers[iIdx] -= xPlan[iIdx][jIdx];
@@ -249,19 +251,20 @@ public class Solution {
         }
 
         //check zero prices (added for isolation)
-        for (int i = 0; i < cost.length; i++) {
-            for (int j = 0; j < cost[i].length; j++) {
-                if (offers[i] != 0 && needs[j] != 0) {
-                    if (cost[i][j] == 0) {
-                        xPlan[i][j] = Math.min(offers[i], needs[j]);
-                        offers[i] -= xPlan[i][j];
-                        needs[j] -= xPlan[i][j];
+        for (Point zeroCost: zeroCostIdxs) {
+            int i = zeroCost.getX();
+            int j = zeroCost.getY();
+            if (offers[i] != 0 && needs[j] != 0) {
+                if (cost[i][j] == 0) {
+                    xPlan[i][j] = Math.min(offers[i], needs[j]);
+                    offers[i] -= xPlan[i][j];
+                    needs[j] -= xPlan[i][j];
 
-                        loggingCurValues(i, j, xPlan, cost, needs, offers, infoBuilder);
-                    }
+                    loggingCurValues(i, j, xPlan, cost, needs, offers, infoBuilder);
                 }
             }
         }
+
         int L = calcL(cost, xPlan);
         infoBuilder.append("\n L = ");
         infoBuilder.append(L);
@@ -308,17 +311,23 @@ public class Solution {
         StringBuilder info = new StringBuilder();
 
         info.append("sumA = ");
+
         OperationResult<Integer> sumResultA = Solution.sum(offers);
         int sumA = sumResultA.getResult();
-        for (String s: sumResultA.getInfo()) {
+        List<String> logs = sumResultA.getInfo();
+
+        for (String s: logs) {
             info.append(s);
         }
         info.append("\n");
 
         info.append("sumB = ");
+
         OperationResult<Integer> sumResultB = Solution.sum(needs);
         int sumB = sumResultB.getResult();
-        for (String s: sumResultB.getInfo()) {
+        logs = sumResultB.getInfo();
+
+        for (String s: logs) {
             info.append(s);
         }
         info.append("\n");
