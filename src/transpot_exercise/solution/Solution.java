@@ -7,8 +7,8 @@ import java.util.*;
  * return OperationResult object with Object result of operation and List of String which explain all actions
  */
 public class Solution {
-    private static final String A_POTENCIAL = "a";
-    private static final String B_POTENCIAL = "b";
+    public static final String A_POTENCIAL = "a";
+    public static final String B_POTENCIAL = "b";
 
     private Solution() {}
 
@@ -30,7 +30,7 @@ public class Solution {
         }
     }
 
-    private static class Point {
+    public static class Point {
         private int x;
         private int y;
 
@@ -69,31 +69,28 @@ public class Solution {
      * @param eXCoordinates - coordinates of zero shipping in array which must be replaced with E: E > 0 && E -> 0
      * We need to solve the sytem of equlation: Ai + Bj = c[i, j] for X[i, j] > 0; A1 = 0
      * A1...Am, B1...Bn, i = 1...m, j = 1..m
-       where m - offers size, n - needs size, Ai, Bi - potencials
-       @return OperationResult<Map<String, int[]>> wich contains logs and A, B potencials
+      where m - offers size, n - needs size, Ai, Bi - potencials
+     @return OperationResult wich contains logs and A, B potencials
      **/
     public static OperationResult<Map<String, int[]>> getPotencials(int[][] curPlan, int[][] cost,
-                                                                     Point[] eXCoordinates) {
+                                                                    Point[] eXCoordinates) {
         Map<String, int[]> res = new HashMap<>();
-        List<Integer> aPotencial = new ArrayList<>();
-        List<Integer> bPotencial = new ArrayList<>();
         ArrayList<String> infoList = new ArrayList<>();
 
-        List<Point> eCoordinates = null;
+        Set<Point> eCoordinates = null;
         if (eXCoordinates != null && eXCoordinates.length != 0) {
-            eCoordinates = new ArrayList<>();
+            eCoordinates = new HashSet<>();
             Collections.addAll(eCoordinates, eXCoordinates);
         };
 
         boolean isPlanDegenerate = eCoordinates != null;
 
-        //init cost map: C[i,j] for X[i, j] > 0
-        //Point - price coordinates in cost array
-        Map<Point, Integer> costForPotencials = new HashMap<>();
+        //init equalations: Ai + Bj = C[i,j] for X[i, j] > 0
+        Map<Point, Integer> equalations = new HashMap<>();
         for (int i = 0; i < cost.length; i++) {
             for (int j = 0; j < cost[i].length; j++) {
                 if (curPlan[i][j] != 0 || (isPlanDegenerate && eCoordinates.contains(new Point(i, j)))) {
-                    costForPotencials.put(new Point(i, j), cost[i][j]);
+                    equalations.put(new Point(i, j), cost[i][j]);
                 }
             }
         }
@@ -101,28 +98,51 @@ public class Solution {
         int offersSize = cost.length;
         int needsSize = cost[0].length;
 
-        if ((offersSize + needsSize - 1) != costForPotencials.size()) {
+        if ((offersSize + needsSize - 1) != equalations.size()) {
             throw new IllegalArgumentException("m + n - 1 != basicCellSize: incorrect eXCoordinates List");
         }
 
-        /* we need use Gaussian elimination to solve system
-        */
-        int[][] coefMaxtix = new int[offersSize + needsSize - 1][offersSize + needsSize];
+        int[] aPotencial = new int[offersSize];
+        int[] bPotencial = new int[needsSize];
+        int potencialCount = offersSize + needsSize;
 
-        int matrixRow = 0;
-        for (Point coordinate: costForPotencials.keySet()) {
-            int i = coordinate.getX();
-            int j = coordinate.getY();
-            if (i != 0) {
-                coefMaxtix[matrixRow][i] = 1;                          //Ai, A1 == 0
+        //put x Idx as x and y Idx as y + offersSize
+        Set<Integer> solvedIdxs = new HashSet<>();
+        solvedIdxs.add(0);                                //A1 = 0
+        aPotencial[0] = 0;
+
+        while(solvedIdxs.size() != potencialCount) {
+            for (Point equlationVariables: equalations.keySet()) {
+                if (solvedIdxs.size() == potencialCount) break;
+
+                int x = equlationVariables.getX();
+                int y = equlationVariables.getY();
+                boolean isAxResolved = solvedIdxs.contains(x);
+                boolean isByResolved = solvedIdxs.contains(y + offersSize);
+
+                //if both variables unresolved - go to next equlation
+                if (!isAxResolved && !isByResolved) {
+                    continue;
+                }
+
+                //if both variables resolved - go to next equalation
+                if (isAxResolved && isByResolved) {
+                    continue;
+                }
+
+                int price = equalations.get(equlationVariables);
+
+                if (isAxResolved) {
+                    bPotencial[y] = price - aPotencial[x];
+                }else {
+                    aPotencial[x] = price - bPotencial[y];
+                }
+                solvedIdxs.add(isAxResolved ? y + offersSize : x);
             }
-            coefMaxtix[matrixRow][offersSize + j] = 1;             //Bj
-            matrixRow++;
         }
 
-
-        res.put(A_POTENCIAL, ConvertUtils.singleListToPrimitiveArray(aPotencial));
-        res.put(B_POTENCIAL, ConvertUtils.singleListToPrimitiveArray(bPotencial));
+        res.put(A_POTENCIAL, aPotencial);
+        res.put(B_POTENCIAL, bPotencial);
         return new OperationResult<>(res, infoList);
     }
 
