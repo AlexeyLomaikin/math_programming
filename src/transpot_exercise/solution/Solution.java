@@ -72,9 +72,10 @@ public class Solution {
     where m - offers size, n - needs size, Ai, Bi - potencials
      @return OperationResult wich contains logs and A, B potencials
      **/
-    public static OperationResult<Map<String, int[]>> getPotencials(int[][] curPlan, int[][] cost,
+    private static OperationResult<Map<String, int[]>> getPotencials(int[][] curPlan, int[][] cost,
                                                                     Point[] eXCoordinates) {
         ArrayList<String> infoList = new ArrayList<>();
+        StringBuilder info = new StringBuilder();
 
         Set<Point> eCoordinates = null;
         if (eXCoordinates != null && eXCoordinates.length != 0) {
@@ -89,7 +90,7 @@ public class Solution {
 
         //init equalations: Ai + Bj = C[i,j] for X[i, j] > 0
         Map<Point, Integer> equalations = new HashMap<>();
-        for (int i = 0; i < offersSize; i++) {
+        for (int i = 0; i < cost.length; i++) {
             for (int j = 0; j < cost[i].length; j++) {
                 if (curPlan[i][j] != 0 || (isPlanDegenerate && eCoordinates.contains(new Point(i, j)))) {
                     equalations.put(new Point(i, j), cost[i][j]);
@@ -111,6 +112,8 @@ public class Solution {
         solvedIdxs.add(0);                                //A1 = 0
         aPotencial[0] = 0;
 
+        info.append("Производим рассчет потенциалов:\n");
+        info.append("A0 = 0\n");
         while(solvedIdxs.size() != potencialCount) {
             for (Point equlationVariables: equalations.keySet()) {
                 if (solvedIdxs.size() == potencialCount) break;
@@ -132,10 +135,20 @@ public class Solution {
 
                 int price = equalations.get(equlationVariables);
 
+                info.append("A[" + x + "] + " );
+                info.append("B[" + y + "] = ");
+                info.append(price + "    ");
+
                 if (isAxResolved) {
                     bPotencial[y] = price - aPotencial[x];
+                    info.append("B[" + y + "] = ");
+                    info.append(price + " - " + "A" + x);
+                    info.append(" = " + bPotencial[y] + "\n");
                 }else {
                     aPotencial[x] = price - bPotencial[y];
+                    info.append("A[" + x + "] = ");
+                    info.append(price + " - " + "B" + y);
+                    info.append(" = " + aPotencial[x] + "\n");
                 }
                 solvedIdxs.add(isAxResolved ? y + offersSize : x);
             }
