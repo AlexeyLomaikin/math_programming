@@ -7,10 +7,19 @@ import java.util.*;
  * return OperationResult object with Object result of operation and List of String which explain all actions
  */
 public class Solution {
+    private Solution() {}
+
     public static final String A_POTENCIAL = "a";
     public static final String B_POTENCIAL = "b";
+    private static double E = 0.00001;
 
-    private Solution() {}
+    public static void setE(double E) {
+        Solution.E = E;
+    }
+    public static double getE() {
+        return Solution.E;
+    }
+
 
     public static class OperationResult<T> {
         private T result;
@@ -30,18 +39,18 @@ public class Solution {
         }
     }
 
-    public static class Point {
+    private static class Point {
         private int x;
         private int y;
 
-        public Point(int x, int y) {
+        Point(int x, int y) {
             this.x = x;
             this.y = y;
         }
-        public int getX() {
+        int getX() {
             return x;
         }
-        public int getY() {
+        int getY() {
             return y;
         }
 
@@ -72,8 +81,8 @@ public class Solution {
     where m - offers size, n - needs size, Ai, Bi - potencials
      @return OperationResult wich contains logs and A, B potencials
      **/
-    private static OperationResult<Map<String, int[]>> getPotencials(int[][] curPlan, int[][] cost,
-                                                                    Point[] eXCoordinates) {
+    private static OperationResult<Map<String, double[]>> getPotencials(double[][] curPlan, double[][] cost,
+                                                                     Point[] eXCoordinates) {
         ArrayList<String> infoList = new ArrayList<>();
         StringBuilder info = new StringBuilder();
 
@@ -174,6 +183,7 @@ public class Solution {
             int basicCellCount = 0;
             //sorted set of cost for zero shipping: c[i][j] for x[i][j] == 0
             Set<Integer> zeroXCost = new TreeSet<>();
+            Set<Point> zeroXs = new HashSet<>();
 
             for (int i = 0; i < curPlan.length; i++) {
                 for (int j = 0; j < curPlan[i].length; j++) {
@@ -181,6 +191,7 @@ public class Solution {
                         basicCellCount++;
                     } else {
                         zeroXCost.add(cost[i][j]);
+                        zeroXs.add(new Point(i, j));
                     }
                 }
             }
@@ -192,29 +203,214 @@ public class Solution {
 
             if (diff == 0) {
                 logger.append("План невырожденный");
+                OperationResult<Map<String, int[]>> result = Solution.getPotencials(curPlan, cost, null);
+                for (String s: result.getInfo()) {
+                    logger.append(s);
+                }
+                int[] aPotencials = result.getResult().get(A_POTENCIAL);
+                int[] bPotencials = result.getResult().get(B_POTENCIAL);
             } else {
                 logger.append("План вывырожденный");
 
                 //coordinates of zero shipping in array sorted by their cost
                 //first of them: (m + n - 1 - basicCellCount) will be marked as E
-                List<Point> zeroXCoordinates = new ArrayList<>();
+                List<Point> eCoordinates = new ArrayList<>();
 
                 find:
-                for (int price: zeroXCost) {
-                    for (int i = 0; i < curPlan.length; i++)
-                        for (int j = 0; j < curPlan[i].length ; j++) {
-                            if (curPlan[i][j] == 0 && cost[i][j] == price) {
-                                if (zeroXCoordinates.size() == diff) {
-                                    break find;
-                                }
-                                zeroXCoordinates.add(new Point(i, j));
+                for (int price : zeroXCost) {
+                    for (Point zeroX : zeroXs) {
+                        int i = zeroX.getX();
+                        int j = zeroX.getY();
+                        if (cost[i][j] == price) {
+                            if (eCoordinates.size() == diff) {
+                                break find;
                             }
+                            eCoordinates.add(new Point(i, j));
+                            zeroXs.remove(new Point(i, j));
                         }
+                    }
+                }
+                OperationResult<Map<String, int[]>> result =
+                        Solution.getPotencials(curPlan, cost, eCoordinates.toArray(new Point[eCoordinates.size()]));
+                for (String s: result.getInfo()) {
+                    logger.append(s);
+                }
+                int[] aPotencials = result.getResult().get(A_POTENCIAL);
+                int[] bPotencials = result.getResult().get(B_POTENCIAL);
+                Point maxDiffFakeCost = null;
+                int maxDiffPrice = 0;
+                for (Point zeroX: zeroXs) {
+                    int x = zeroX.getX();
+                    int y = zeroX.getY();
+                    int fakePrice = aPotencials[x] + bPotencials[y];
+                    int diffPrice = fakePrice - cost[x][y];
+                    if (diffPrice > maxDiffPrice) {
+                        maxDiffPrice = diffPrice;
+                        maxDiffFakeCost = new Point(x, y);
+                    }
+                }
+                if (maxDiffFakeCost != null) {
+
+                }
+            }
+        }
+        return new OperationResult<>(allPlans, infoList);
+    }
+
+    private static OperationResult<boolean[][]> getCycle(Point startZeroShipping, int[][] curPlan) {
+        int startX = startZeroShipping.getX();
+        int prevX = startX - 1;
+        int nextX = startX + 1;
+
+        int startY = startZeroShipping.getY();
+        int prevY = startY - 1;
+        int nextY = startY + 1;
+
+        int xLength = curPlan.length;
+        int yLength = curPlan[0].length;
+
+        boolean[][] choosenCells = new boolean[curPlan.length][curPlan[0].length];
+        choosenCells[startX][startY] = true;
+
+        List<String> logs = new ArrayList<>();
+        boolean cycleMaked = false;
+
+        if (prevX >= 0) {
+            cycleMaked  = makeCycle(startZeroShipping, startZeroShipping, new Point(prevX, startY), curPlan, choosenCells);
+        }
+
+        if (cycleMaked)
+            return new OperationResult<>(choosenCells, logs);
+
+        if (nextX < xLength) {
+            cycleMaked = makeCycle(startZeroShipping, startZeroShipping, new Point(nextX, startY), curPlan, choosenCells);
+        }
+
+        if (cycleMaked)
+            return new OperationResult<>(choosenCells, logs);
+
+        if (prevY >= 0) {
+            cycleMaked = makeCycle(startZeroShipping, startZeroShipping, new Point(startX, prevY), curPlan, choosenCells);
+        }
+
+        if (cycleMaked)
+            return new OperationResult<>(choosenCells, logs);
+
+        if (nextY < yLength) {
+            makeCycle(startZeroShipping, startZeroShipping, new Point(startX, nextY), curPlan, choosenCells);
+        }
+
+        return new OperationResult<>(choosenCells, logs);
+    }
+
+    public static void main(String[] args) {
+    }
+
+    private static boolean makeCycle(Point startZeroX, Point prevX, Point curX,  int[][] curPlan,
+                                     boolean[][] choosenCells) {
+        if (curX.equals(startZeroX))
+            return true;
+
+        int x = curX.getX();
+        int x1 = x - 1;
+        int x2 = x + 1;
+        boolean isPrevUp = (x - 1 == prevX.getX());
+        boolean isPrevDown = (x + 1 == prevX.getX());
+
+        int y = curX.getY();
+        int y1 = y - 1;
+        int y2 = y + 1;
+        boolean isPrevLeft = (y - 1 == prevX.getY());
+        boolean isPrevRight = (y + 1 == prevX.getY());
+
+        int xLength = curPlan.length;
+        int yLength  = curPlan[0].length;
+        int prevShippingX = prevX.getX();
+        int prevShippingY = prevX.getY();
+
+        boolean cycleMaked = false;
+
+        if (y2 < yLength && y2 != prevShippingY) {
+            if (!choosenCells[x][y2]) {
+                if (isPrevLeft || isPrevRight) {
+                    if (curPlan[x][y] > 0) {
+                        choosenCells[x][y] = true;
+                        cycleMaked = makeCycle(startZeroX, curX, new Point(x, y2), curPlan, choosenCells);
+                    }else {
+                        cycleMaked = false;
+                    }
+                }else {
+                    cycleMaked = makeCycle(startZeroX, curX, new Point(x, y2), curPlan, choosenCells);
                 }
             }
         }
 
-        return new OperationResult<>(allPlans, infoList);
+        if (cycleMaked) {
+            return true;
+        }
+        choosenCells[x][y] = false;
+
+        if (y1 >= 0 && y1 != prevShippingY) {
+            if (!choosenCells[x][y1]){
+                if (isPrevLeft || isPrevRight) {
+                    if (curPlan[x][y] > 0) {
+                        choosenCells[x][y] = true;
+                        cycleMaked = makeCycle(startZeroX, curX, new Point(x, y1), curPlan, choosenCells);
+                    }else {
+                        cycleMaked = false;
+                    }
+                }else {
+                    cycleMaked = makeCycle(startZeroX, curX, new Point(x, y1), curPlan, choosenCells);
+                }
+            }
+        }
+
+        if (cycleMaked) {
+            return true;
+        }
+        choosenCells[x][y] = false;
+
+        if (x2 < xLength && x2 != prevShippingX) {
+            if (!choosenCells[x2][y]) {
+                if (isPrevUp || isPrevDown) {
+                    if (curPlan[x][y] > 0) {
+                        choosenCells[x][y] = true;
+                        cycleMaked = makeCycle(startZeroX, curX, new Point(x2, y), curPlan, choosenCells);
+                    }else {
+                        cycleMaked = false;
+                    }
+                }else {
+                    cycleMaked = makeCycle(startZeroX, curX, new Point(x2, y), curPlan, choosenCells);
+                }
+            }
+        }
+
+        if (cycleMaked) {
+            return true;
+        }
+        choosenCells[x][y] = false;
+
+        if (x1 >= 0 && x1 != prevShippingX) {
+            if (!choosenCells[x1][y]) {
+                if (isPrevUp || isPrevDown) {
+                    if (curPlan[x][y] > 0) {
+                        choosenCells[x][y] = true;
+                        cycleMaked = makeCycle(startZeroX, curX, new Point(x1, y), curPlan, choosenCells);
+                    }else {
+                        cycleMaked = false;
+                    }
+                }else {
+                    cycleMaked = makeCycle(startZeroX, curX, new Point(x1, y), curPlan, choosenCells);
+                }
+            }
+        }
+
+        if (cycleMaked) {
+            return true;
+        }
+        choosenCells[x][y] = false;
+
+        return false;
     }
 
     public static OperationResult<int[][]> MinMethod(int[] consumersNeeds, int[] providersOffers,
@@ -319,14 +515,14 @@ public class Solution {
         return new OperationResult<>(xPlan, infoList);
     }
 
-    public static OperationResult<Void> makeIsolation(List<List<Integer>> cost,
-                                                      List<Integer> needs, List<Integer> offers) {
+    public static OperationResult<Void> makeIsolation(List<List<Double>> cost,
+                                                      List<Double> needs, List<Double> offers) {
         StringBuilder info = new StringBuilder();
 
         info.append("sumA = ");
 
-        OperationResult<Integer> sumResultA = Solution.sum(offers);
-        int sumA = sumResultA.getResult();
+        OperationResult<Double> sumResultA = Solution.sum(offers);
+        double sumA = sumResultA.getResult();
         List<String> logs = sumResultA.getInfo();
 
         for (String s: logs) {
@@ -336,7 +532,7 @@ public class Solution {
 
         info.append("sumB = ");
 
-        OperationResult<Integer> sumResultB = Solution.sum(needs);
+        OperationResult<Double> sumResultB = Solution.sum(needs);
         int sumB = sumResultB.getResult();
         logs = sumResultB.getInfo();
 
@@ -388,11 +584,11 @@ public class Solution {
         return new OperationResult<>(null, infoList);
     }
 
-    public static OperationResult<Integer> sum(List<Integer> list) {
+    public static OperationResult<Double> sum(List<Double> list) {
         StringBuilder infoBuilder = new StringBuilder();
-        int sum = 0;
+        double sum = 0;
         for (int i = 0; i < list.size(); i++) {
-            int num = list.get(i);
+            double num = list.get(i);
             sum += num;
 
             infoBuilder.append(num);
@@ -408,7 +604,7 @@ public class Solution {
         return new OperationResult<>(sum, infoList);
     }
 
-    public static int calcL(int[][] cost, int[][] xPlan) {
+    public static double calcL(double[][] cost, double[][] xPlan) {
         int L = 0;
         for (int i = 0; i < xPlan.length; i++) {
             for (int j = 0; j < xPlan[i].length; j++) {
@@ -420,7 +616,7 @@ public class Solution {
         return L;
     }
 
-    private static void loggingCurValues(int i, int j, int[][]xPlan, int[][]cost, int[] needs, int[] offers,
+    private static void loggingCurValues(int i, int j, double[][]xPlan, double[][]cost, double[] needs, double[] offers,
                                          StringBuilder infoBuilder) {
         if (infoBuilder == null) return;
         if (cost != null) {
@@ -444,7 +640,7 @@ public class Solution {
         }
     }
 
-    private static void logValue(StringBuilder logger, int value, String title) {
+    private static void logValue(StringBuilder logger, double value, String title) {
         logger.append(title);
         logger.append(" = ");
         logger.append(value);
