@@ -353,7 +353,7 @@ public class Solution {
                 //if we have many shippings with equal min values ...
                 // we must exclude only one of them
                 if (!eCoordinates.contains(cycledShipping)) {
-                    logger.append(curPlan[x][y] + " - " + minNegShippingValue);
+                    logger.append(curPlan[x][y] + " - " + (minNegShippingValue > E ? minNegShippingValue: "E"));
 
                     if (curPlan[x][y] == minNegShippingValue && !cycledShipping.equals(removedShipping)) {
                         eCoordinates.add(cycledShipping);
