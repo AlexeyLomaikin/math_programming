@@ -168,7 +168,7 @@ public class SolutionFrame extends JFrame {
     protected void returnToPrevFrame() {
         dispose();
         prevFrame.setVisible(true);
-        prevFrame.requestFocus();
+        prevFrame.toFront();
     }
 
     protected Container createButtonPanel() {

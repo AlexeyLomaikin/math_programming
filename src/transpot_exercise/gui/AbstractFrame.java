@@ -122,7 +122,7 @@ public abstract class AbstractFrame extends JFrame{
         dispose();
         if (prevFrame != null) {
             prevFrame.setVisible(true);
-            prevFrame.requestFocus();
+            prevFrame.toFront();
         }
     }
 
