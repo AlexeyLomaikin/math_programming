@@ -32,7 +32,7 @@ public class FillFrame extends AbstractFrame {
 
     private TextCel createField(boolean isDisabled, boolean isInfoField, String toolTip) {
         Border initialBorder = isInfoField ? BorderFactory.createLineBorder(Color.BLUE) :
-                                             BorderFactory.createLineBorder(Color.LIGHT_GRAY);
+                BorderFactory.createLineBorder(Color.LIGHT_GRAY);
         final TextCel field = new TextCel(5, initialBorder);
 
         field.setEnabled(!isDisabled);
@@ -82,6 +82,11 @@ public class FillFrame extends AbstractFrame {
             @Override
             public void focusGained(FocusEvent e) {
                 backLightSelectedCell(true, (TextCel) e.getSource());
+                String text = field.getText();
+                if (!text.isEmpty()) {
+                    field.setSelectionStart(0);
+                    field.setSelectionEnd(text.length());
+                }
                 validateCell(field);
             }
 

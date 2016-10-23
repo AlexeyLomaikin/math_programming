@@ -38,28 +38,6 @@ public abstract class AbstractFrame extends JFrame{
     private Component createButtonPanel() {
         Box buttonPanel = Box.createHorizontalBox();
 
-        JButton showAnswer = new JButton("показать ответ");
-        showAnswer.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-
-            }
-        });
-        showAnswer.addKeyListener(new KeyListener() {
-            @Override
-            public void keyTyped(KeyEvent e) {}
-
-            @Override
-            public void keyPressed(KeyEvent e) {
-                if (e.getKeyCode() == KeyEvent.VK_ENTER) {
-
-                }
-            }
-
-            @Override
-            public void keyReleased(KeyEvent e) {}
-        });
-
         final JButton ok = new JButton("далее");
         ok.addActionListener(new ActionListener() {
             @Override
@@ -131,8 +109,6 @@ public abstract class AbstractFrame extends JFrame{
 
 
         buttonPanel.add(Box.createHorizontalGlue());
-        buttonPanel.add(showAnswer);
-        buttonPanel.add(Box.createHorizontalStrut(10));
         buttonPanel.add(ok);
         buttonPanel.add(Box.createHorizontalStrut(10));
         buttonPanel.add(cancel);
@@ -146,6 +122,7 @@ public abstract class AbstractFrame extends JFrame{
         dispose();
         if (prevFrame != null) {
             prevFrame.setVisible(true);
+            prevFrame.requestFocus();
         }
     }
 
