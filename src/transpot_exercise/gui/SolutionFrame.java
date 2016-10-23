@@ -1,6 +1,7 @@
 package transpot_exercise.gui;
 
 import transpot_exercise.solution.ConvertUtils;
+import transpot_exercise.solution.PotencialMethodIteration;
 import transpot_exercise.solution.Solution.OperationResult;
 import transpot_exercise.solution.Solution;
 
@@ -15,26 +16,36 @@ import java.util.List;
 
 public class SolutionFrame extends JFrame {
     private JFrame prevFrame;
-    private int[][] cost;
-    private int[] consumersNeeds;
-    private int[] providerOffers;
-    private JButton ok;
+    private double[][] cost;
+    private double[] consumersNeeds;
+    private double[] providerOffers;
+    protected JButton ok;
     private JComboBox<String> methodsList;
-    private List<String> info = new ArrayList<>();
+    protected List<String> info = new ArrayList<>();
 
     private static final String EMPTY = "";
     private static final String NORTH_WEST_METHOD = "Метод северо-западного угла";
     private static final String MIN_METHOD = "Метод наименьшего элемента";
 
     public SolutionFrame(JFrame prevFrame, ArrayList<String> data, int consumersSize, int providersSize) {
+        this(prevFrame);
+        initData(data, consumersSize, providersSize);
+        init();
+    }
+
+    protected SolutionFrame(JFrame prevFrame) {
         super("Транспортная задача");
         setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
         this.prevFrame = prevFrame;
-        init(data, consumersSize, providersSize);
     }
 
-    private void init(List<String> data, int consumersSize, int providersSize) {
-        initData(data, consumersSize, providersSize);
+    protected Component createInfoLabel() {
+        JLabel infoLabel = new JLabel("Выберите метод получения начального опорного плана");
+        infoLabel.setHorizontalAlignment(SwingConstants.LEFT);
+        return infoLabel;
+    }
+
+    protected void init() {
 
         Box mainPanel = Box.createVerticalBox();
 
@@ -44,16 +55,11 @@ public class SolutionFrame extends JFrame {
         }
         solInfo.setEditable(false);
 
-        JLabel infoLabel = new JLabel("Выберите метод получения начального опорного плана");
-        infoLabel.setHorizontalAlignment(SwingConstants.LEFT);
-
         mainPanel.add(Box.createVerticalStrut(5));
         mainPanel.add(createResultTable(cost));
         mainPanel.add(solInfo);
-        mainPanel.add(infoLabel);
-        mainPanel.add(createInputPanel());
         mainPanel.add(createButtonPanel());
-
+        addSomeSpecificComponents(mainPanel);
         setContentPane(mainPanel);
 
         pack();
@@ -61,7 +67,12 @@ public class SolutionFrame extends JFrame {
         setResizable(false);
     }
 
-    private Component createResultTable(int[][] data) {
+    protected void addSomeSpecificComponents(Box mainPanel) {
+        mainPanel.add(createInfoLabel());
+        mainPanel.add(createInputPanel());
+    }
+
+    protected Component createResultTable(double[][] data) {
         final Box table = Box.createVerticalBox();
         int rows = providerOffers.length + 1;
         int cols = consumersNeeds.length + 1;
@@ -104,17 +115,17 @@ public class SolutionFrame extends JFrame {
         int i;
 
         //create cost, offers and needs lists
-        List<List<Integer>> costList = new ArrayList<>();
+        List<List<Double>> costList = new ArrayList<>();
         for (i = 0; i < providersSize; i++) {
-            costList.add(new ArrayList<Integer>());
+            costList.add(new ArrayList<Double>());
         }
 
-        List<Integer> consumers = new ArrayList<>();
-        List<Integer> providers = new ArrayList<>();
+        List<Double> consumers = new ArrayList<>();
+        List<Double> providers = new ArrayList<>();
 
         //init needs list
         for (i = 0; i < consumersSize; i++) {
-            consumers.add(Integer.parseInt(data.get(i)));
+            consumers.add(Double.parseDouble(data.get(i)));
         }
 
         //init needs list and cost list
@@ -123,12 +134,12 @@ public class SolutionFrame extends JFrame {
         for (i = consumersSize; i < data.size(); i++) {
             counter++;
             if (counter % cols == 1) {
-                providers.add(Integer.parseInt(data.get(i)));
+                providers.add(Double.parseDouble(data.get(i)));
             }
             else {
                 boolean endOfRow = counter % cols == 0;
                 int provider = (endOfRow) ? (counter / cols - 1): (counter / cols);
-                costList.get(provider).add(Integer.parseInt(data.get(i)));
+                costList.get(provider).add(Double.parseDouble(data.get(i)));
             }
         }
 
@@ -139,7 +150,7 @@ public class SolutionFrame extends JFrame {
         this.cost = ConvertUtils.doubleListToPrimitiveArray(costList);
     }
 
-    private TextCel createField(boolean isDisabled, String toolTip) {
+    protected TextCel createField(boolean isDisabled, String toolTip) {
         final TextCel field = new TextCel(5);
         if (!isDisabled) {
             field.setToolTipText(toolTip);
@@ -154,19 +165,20 @@ public class SolutionFrame extends JFrame {
         return field;
     }
 
-    private void returnToFillFrame() {
+    protected void returnToPrevFrame() {
         dispose();
         prevFrame.setVisible(true);
+        prevFrame.requestFocus();
     }
 
-    private Component createButtonPanel() {
+    protected Container createButtonPanel() {
         Box buttonPanel = Box.createHorizontalBox();
 
         JButton showAnswer = new JButton("показать ответ");
         showAnswer.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-
+                showResult(true);
             }
         });
         showAnswer.addKeyListener(new KeyListener() {
@@ -176,10 +188,9 @@ public class SolutionFrame extends JFrame {
             @Override
             public void keyPressed(KeyEvent e) {
                 if (e.getKeyCode() == KeyEvent.VK_ENTER) {
-
+                    showResult(true);
                 }
             }
-
             @Override
             public void keyReleased(KeyEvent e) {}
         });
@@ -190,19 +201,7 @@ public class SolutionFrame extends JFrame {
         ok.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                OperationResult<int[][]> result = null;
-                String selectedMethod = (String)methodsList.getSelectedItem();
-                switch (selectedMethod) {
-                    case MIN_METHOD:
-                        result = Solution.MinMethod(consumersNeeds, providerOffers, cost);
-                        break;
-                    case NORTH_WEST_METHOD:
-                        result = Solution.NorthWestMethod(consumersNeeds, providerOffers, cost);
-                        break;
-                }
-                clearResultInfo();
-                SolutionFrame.this.info.addAll(result.getInfo());
-                reinitFrame(result.getResult());
+                onOkPressed();
             }
         });
         ok.addKeyListener(new KeyListener() {
@@ -212,19 +211,7 @@ public class SolutionFrame extends JFrame {
             @Override
             public void keyPressed(KeyEvent e) {
                 if (e.getKeyCode() == KeyEvent.VK_ENTER) {
-                    OperationResult<int[][]> result = null;
-                    String selectedMethod = (String)methodsList.getSelectedItem();
-                    switch (selectedMethod) {
-                        case MIN_METHOD:
-                            result = Solution.MinMethod(consumersNeeds, providerOffers, cost);
-                            break;
-                        case NORTH_WEST_METHOD:
-                            result = Solution.NorthWestMethod(consumersNeeds, providerOffers, cost);
-                            break;
-                    }
-                    clearResultInfo();
-                    SolutionFrame.this.info.addAll(result.getInfo());
-                    reinitFrame(result.getResult());
+                    onOkPressed();
                 }
             }
 
@@ -236,7 +223,7 @@ public class SolutionFrame extends JFrame {
         cancel.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                returnToFillFrame();
+                returnToPrevFrame();
             }
         });
         cancel.addKeyListener(new KeyListener() {
@@ -246,7 +233,7 @@ public class SolutionFrame extends JFrame {
             @Override
             public void keyPressed(KeyEvent e) {
                 if (e.getKeyCode() == KeyEvent.VK_ENTER) {
-                    returnToFillFrame();
+                    returnToPrevFrame();
                 }
             }
 
@@ -289,7 +276,38 @@ public class SolutionFrame extends JFrame {
         return buttonPanel;
     }
 
-    private void reinitFrame(int[][] data) {
+    protected void onOkPressed() {
+        OperationResult<double[][]> getFirstPlanResult = null;
+        String selectedMethod = (String)methodsList.getSelectedItem();
+        switch (selectedMethod) {
+            case MIN_METHOD:
+                getFirstPlanResult = Solution.MinMethod(consumersNeeds, providerOffers, cost);
+                break;
+            case NORTH_WEST_METHOD:
+                getFirstPlanResult = Solution.NorthWestMethod(consumersNeeds, providerOffers, cost);
+                break;
+        }
+        double[][] firstPlan = getFirstPlanResult.getResult();
+
+        OperationResult<List<PotencialMethodIteration>> methodResult = Solution.potentialMethod(firstPlan, cost);
+        ShowSolutionFrame nextFrame = new ShowSolutionFrame(this, methodResult, 0);
+        nextFrame.setVisible(true);
+        this.setVisible(false);
+    }
+
+    protected void showResult(boolean isFinalResult) {
+        OperationResult<double[][]> getFirstPlanResult = Solution.MinMethod(consumersNeeds,
+                providerOffers, cost);
+        double[][] firstPlan = getFirstPlanResult.getResult();
+        OperationResult<List<PotencialMethodIteration>> methodResult = Solution.potentialMethod(firstPlan, cost);
+        List<PotencialMethodIteration> iterations = methodResult.getResult();
+        int iterationIdx = isFinalResult ? iterations.size() - 1 : 0;
+        ShowSolutionFrame answerFrame = new ShowSolutionFrame(SolutionFrame.this,  methodResult, iterationIdx);
+        answerFrame.setVisible(true);
+        SolutionFrame.this.setVisible(false);
+    }
+
+    private void reinitFrame(double[][] data) {
         Box mainPanel = Box.createVerticalBox();
 
         JTextArea solInfo = new JTextArea();
@@ -311,7 +329,7 @@ public class SolutionFrame extends JFrame {
         setResizable(false);
     }
 
-    private Component createInputPanel() {
+    protected Component createInputPanel() {
         Box inputPanel = Box.createHorizontalBox();
 
         methodsList = new JComboBox<>(new String[]{EMPTY, NORTH_WEST_METHOD, MIN_METHOD});
