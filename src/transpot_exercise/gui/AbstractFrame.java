@@ -123,6 +123,7 @@ public abstract class AbstractFrame extends JFrame{
         if (prevFrame != null) {
             prevFrame.setVisible(true);
             prevFrame.toFront();
+            prevFrame.setCursor(Cursor.getDefaultCursor());
         }
     }
 

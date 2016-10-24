@@ -54,14 +54,17 @@ public class SolutionFrame extends JFrame {
             solInfo.append(s);
         }
         solInfo.setEditable(false);
+        JScrollPane scrollPane = new JScrollPane(solInfo);
+        scrollPane.setPreferredSize(new Dimension(400, 200));
 
         mainPanel.add(Box.createVerticalStrut(5));
         mainPanel.add(createResultTable(cost));
-        mainPanel.add(solInfo);
+        mainPanel.add(scrollPane);
         mainPanel.add(createButtonPanel());
         addSomeSpecificComponents(mainPanel);
         setContentPane(mainPanel);
 
+        setPreferredSize(new Dimension(600, 600));
         pack();
         setLocationRelativeTo(null);
         setResizable(false);
@@ -169,6 +172,7 @@ public class SolutionFrame extends JFrame {
         dispose();
         prevFrame.setVisible(true);
         prevFrame.toFront();
+        prevFrame.setCursor(Cursor.getDefaultCursor());
     }
 
     protected Container createButtonPanel() {
@@ -333,6 +337,7 @@ public class SolutionFrame extends JFrame {
         Box inputPanel = Box.createHorizontalBox();
 
         methodsList = new JComboBox<>(new String[]{EMPTY, NORTH_WEST_METHOD, MIN_METHOD});
+        methodsList.setPreferredSize(new Dimension(600, 10));
         methodsList.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {

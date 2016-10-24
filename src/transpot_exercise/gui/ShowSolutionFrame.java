@@ -27,7 +27,8 @@ public class ShowSolutionFrame extends SolutionFrame {
         this.iterations = result.getResult();
         this.iterationIdx = iterationIdx;
         this.info = Collections.singletonList(result.getInfo().get(iterationIdx));
-        init();
+        super.init();
+        setResizable(true);
         ok.setEnabled(true);
     }
 
@@ -52,6 +53,7 @@ public class ShowSolutionFrame extends SolutionFrame {
         double[][] curPlan = curIteration.getCurPlan();
         Set<Point> eCoordinates = curIteration.getECoordinates();
         List<Point> cycledCells = curIteration.getCycledCells();
+        Map<Point, Double> fakeCost = curIteration.getFakeCosts();
 
         int rows = potencials.get(Solution.A_POTENCIAL).length + 1;
         int cols = potencials.get(Solution.B_POTENCIAL).length + 1;
@@ -96,6 +98,9 @@ public class ShowSolutionFrame extends SolutionFrame {
                             field.setBackground(Color.BLUE);
                     }
                     String text = cost[i - 1][j - 1] + ")  " + shippingString;
+                    if (fakeCost.containsKey(curCell)) {
+                        text += "  (" + fakeCost.get(curCell);
+                    }
                     field.setText(text);
                     field.setToolTipText("x" + (i-1) + ", " + (j-1));
                 }
@@ -110,6 +115,13 @@ public class ShowSolutionFrame extends SolutionFrame {
     @Override
     protected void addSomeSpecificComponents(Box mainPanel) {
 
+    }
+
+    @Override
+    protected TextCel createField(boolean isDisabled, String tooltip) {
+        TextCel field = super.createField(isDisabled, tooltip);
+        field.setFont(new Font("SansSerif", Font.ITALIC, 16));
+        return field;
     }
 
     @Override
