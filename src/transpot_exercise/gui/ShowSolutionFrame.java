@@ -44,7 +44,7 @@ public class ShowSolutionFrame extends SolutionFrame {
     }
 
     @Override
-    protected Component createResultTable(double[][] data) {
+    protected Component createResultTable() {
         final Box table = Box.createVerticalBox();
 
         PotencialMethodIteration curIteration = iterations.get(iterationIdx);

@@ -346,6 +346,9 @@ public class Solution {
                 if (eCoordinates.contains(cycledShipping) && minNegShippingValue > E) {
                     eCoordinates.remove(cycledShipping);
                 }
+                if (minNegShippingValue <= E && curPlan[x][y] <= E) {
+                    eCoordinates.add(cycledShipping);
+                }
                 curPlan[x][y] += minNegShippingValue;
 
                 logger.append(" = " + curPlan[x][y] + "\n");
@@ -362,7 +365,7 @@ public class Solution {
 
                     logger.append(" = " + curPlan[x][y] + "\n");
                 }else {
-                    logger.append("E - E = 0.0");
+                    logger.append("E - E = 0.0\n");
                     if (cycledShipping.equals(removedShipping))
                         eCoordinates.remove(cycledShipping);
                 }

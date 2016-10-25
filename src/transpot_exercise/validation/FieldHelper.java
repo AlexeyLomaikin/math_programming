@@ -12,6 +12,19 @@ public class FieldHelper {
         return false;
     }
 
+    public static boolean isPositiveNumber(String fieldValue) {
+        if (!isEmpty(fieldValue)) {
+            try {
+                double d = Double.parseDouble(fieldValue);
+                if (d > 0.0)
+                    return true;
+            }catch (NumberFormatException e) {
+                return false;
+            }
+        }
+        return false;
+    }
+
     public static boolean isZero(String fieldValue) {
         if (!isEmpty(fieldValue)) {
             return fieldValue.matches("0+");

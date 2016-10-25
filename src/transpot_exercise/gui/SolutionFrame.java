@@ -15,12 +15,15 @@ import java.util.*;
 import java.util.List;
 
 public class SolutionFrame extends JFrame {
+    boolean addSomeSpecificComponents = true;
     private JFrame prevFrame;
+    private double[][] plan;
     private double[][] cost;
     private double[] consumersNeeds;
     private double[] providerOffers;
     protected JButton ok;
     private JComboBox<String> methodsList;
+    private JTextArea solInfo;
     protected List<String> info = new ArrayList<>();
 
     private static final String EMPTY = "";
@@ -39,17 +42,35 @@ public class SolutionFrame extends JFrame {
         this.prevFrame = prevFrame;
     }
 
+    protected SolutionFrame(JFrame prevFrame, double[][] cost, double[][] plan,
+                            double[] consumersNeeds, double[] providerOffers) {
+        this(prevFrame);
+        this.cost = cost;
+        this.plan = plan;
+        this.consumersNeeds = consumersNeeds;
+        this.providerOffers = providerOffers;
+        this.addSomeSpecificComponents = false;
+        init();
+    }
+
     protected Component createInfoLabel() {
         JLabel infoLabel = new JLabel("Выберите метод получения начального опорного плана");
         infoLabel.setHorizontalAlignment(SwingConstants.LEFT);
         return infoLabel;
     }
 
+    private void redrawInfo() {
+        solInfo.setText("");
+        for (String s: info){
+            solInfo.append(s);
+        }
+    }
+
     protected void init() {
 
         Box mainPanel = Box.createVerticalBox();
 
-        JTextArea solInfo = new JTextArea();
+        solInfo = new JTextArea();
         for (String s: info) {
             solInfo.append(s);
         }
@@ -58,10 +79,12 @@ public class SolutionFrame extends JFrame {
         scrollPane.setPreferredSize(new Dimension(400, 200));
 
         mainPanel.add(Box.createVerticalStrut(5));
-        mainPanel.add(createResultTable(cost));
+        mainPanel.add(createResultTable());
         mainPanel.add(scrollPane);
         mainPanel.add(createButtonPanel());
-        addSomeSpecificComponents(mainPanel);
+        if (addSomeSpecificComponents) {
+            addSomeSpecificComponents(mainPanel);
+        }
         setContentPane(mainPanel);
 
         setPreferredSize(new Dimension(600, 600));
@@ -75,7 +98,7 @@ public class SolutionFrame extends JFrame {
         mainPanel.add(createInputPanel());
     }
 
-    protected Component createResultTable(double[][] data) {
+    protected Component createResultTable() {
         final Box table = Box.createVerticalBox();
         int rows = providerOffers.length + 1;
         int cols = consumersNeeds.length + 1;
@@ -100,7 +123,7 @@ public class SolutionFrame extends JFrame {
                     }
                 }else {
                     field = createField(true, "");
-                    String text = cost[i - 1][j - 1] + ")    " + (data != cost ? data[i - 1][j - 1] : "");
+                    String text = cost[i - 1][j - 1] + ")    " + (plan != null ? plan[i - 1][j - 1] : "");
                     field.setText(text);
                     field.setToolTipText("c" + (i-1) + ", " + (j-1));
                 }
@@ -201,7 +224,8 @@ public class SolutionFrame extends JFrame {
 
         JButton ok = new JButton("далее");
         this.ok = ok;
-        ok.setEnabled(false);
+        if (addSomeSpecificComponents)
+            ok.setEnabled(false);
         ok.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
@@ -281,22 +305,29 @@ public class SolutionFrame extends JFrame {
     }
 
     protected void onOkPressed() {
-        OperationResult<double[][]> getFirstPlanResult = null;
-        String selectedMethod = (String)methodsList.getSelectedItem();
-        switch (selectedMethod) {
-            case MIN_METHOD:
-                getFirstPlanResult = Solution.MinMethod(consumersNeeds, providerOffers, cost);
-                break;
-            case NORTH_WEST_METHOD:
-                getFirstPlanResult = Solution.NorthWestMethod(consumersNeeds, providerOffers, cost);
-                break;
+        if (plan == null) {
+            OperationResult<double[][]> getFirstPlanResult = null;
+            String selectedMethod = (String) methodsList.getSelectedItem();
+            switch (selectedMethod) {
+                case MIN_METHOD:
+                    getFirstPlanResult = Solution.MinMethod(consumersNeeds, providerOffers, cost);
+                    break;
+                case NORTH_WEST_METHOD:
+                    getFirstPlanResult = Solution.NorthWestMethod(consumersNeeds, providerOffers, cost);
+                    break;
+            }
+            double[][] firstPlan = getFirstPlanResult.getResult();
+            SolutionFrame nextFrame = new SolutionFrame(this, cost, firstPlan, consumersNeeds, providerOffers);
+            this.setVisible(false);
+            nextFrame.info = getFirstPlanResult.getInfo();
+            nextFrame.redrawInfo();
+            nextFrame.setVisible(true);
+        }else {
+            OperationResult<List<PotencialMethodIteration>> methodResult = Solution.potentialMethod(plan, cost);
+            ShowSolutionFrame nextFrame = new ShowSolutionFrame(this, methodResult, 0);
+            nextFrame.setVisible(true);
+            this.setVisible(false);
         }
-        double[][] firstPlan = getFirstPlanResult.getResult();
-
-        OperationResult<List<PotencialMethodIteration>> methodResult = Solution.potentialMethod(firstPlan, cost);
-        ShowSolutionFrame nextFrame = new ShowSolutionFrame(this, methodResult, 0);
-        nextFrame.setVisible(true);
-        this.setVisible(false);
     }
 
     protected void showResult(boolean isFinalResult) {
@@ -321,7 +352,7 @@ public class SolutionFrame extends JFrame {
         solInfo.setEditable(false);
 
         mainPanel.add(Box.createVerticalStrut(5));
-        mainPanel.add(createResultTable(data));
+        mainPanel.add(createResultTable());
         mainPanel.add(solInfo);
         mainPanel.add(createButtonPanel());
         ok.setEnabled(true);

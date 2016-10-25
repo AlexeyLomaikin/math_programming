@@ -222,7 +222,7 @@ public class FillFrame extends AbstractFrame {
         boolean isEmpty = FieldHelper.isEmpty(field.getText());
         boolean isDisabled = !field.isEnabled();
         boolean isFieldValid = isDisabled ||
-                FieldHelper.isNaturalNumber(field.getText()) || FieldHelper.isZero(field.getText());
+                FieldHelper.isPositiveNumber(field.getText()) || FieldHelper.isZero(field.getText());
         backLightIncorrectCell(isEmpty && !okPressed || isFieldValid, field);
         return isFieldValid;
     }
